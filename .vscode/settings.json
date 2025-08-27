@@ -1,0 +1,12 @@
+// Place your settings in this file to overwrite default and user settings.
+{
+	"files.exclude": {
+		"out": false // set this to true to hide the "out" folder with the compiled JS files
+	},
+	"search.exclude": {
+		"out": true // set this to false to include "out" folder in search results
+	},
+	// Turn off tsc task auto detection since we have the necessary tasks as npm scripts
+	"typescript.tsc.autoDetect": "off",
+	"codebaseAnalyzer.openaiApiKey": "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",
+}
