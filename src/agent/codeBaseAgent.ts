@@ -3,71 +3,43 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import * as vscode from "vscode";
-import { createReadFileTool } from "./tools/readFileTool";
+import { createReadFileTool } from "../tools/readFileTool";
 import { z } from "zod";
-import { createReadFileCodeTool } from "./tools/readFileCodeTool";
-import { getCachedApiKeySync } from "./config"; // <-- use cached key
+import { createReadFileCodeTool } from "../tools/readFileCodeTool";
+import { getSessionApiKey } from "../config"; // <-- get session key
 
-// Helper function to get OpenAI API key from cached storage
-function getOpenAIApiKey(): string {
-  const apiKey = getCachedApiKeySync();
+const getApiKeyForLLM = (): string => {
+  const apiKey = getSessionApiKey();
 
   if (!apiKey || apiKey.trim() === "") {
     throw new Error(
-      'OpenAI API key not configured. Please run the command "AI Codebase Analyzer: Set OpenAI API Key".'
+      "OpenAI API key not available in session. Please restart the extension or set the API key."
     );
   }
 
   return apiKey;
-}
+};
 
-function createLLMInstance(): ChatOpenAI {
-  const apiKey = getOpenAIApiKey();
-
+const createLLMInstance = (): ChatOpenAI => {
+  const apiKey = getApiKeyForLLM();
+  console.log("Using OpenAI API key from session");
   const model = new ChatOpenAI({
     apiKey,
     model: "gpt-5-mini-2025-08-07",
-    // temperature: 0.1,
-    // maxTokens: 2000,
-    // streaming: false,
     reasoning: {
       summary: "auto",
       effort: "high",
     },
   });
 
-  const fileAccessSchema = z.object({
-    fileName: z.array(
-      z
-        .string()
-        .describe(
-          "Name of the files that are needed to be accessed for further planning of task execution"
-        )
-    ),
-  });
+  return model;
+};
 
-  const structuredLlm = model.withStructuredOutput(fileAccessSchema);
-
-  return new ChatOpenAI({
-    apiKey,
-    model: "gpt-5-mini-2025-08-07",
-    // temperature: 0.1,
-    // maxTokens: 2000,
-    // streaming: false,
-    reasoning: {
-      summary: "auto",
-      effort: "high",
-    },
-  });
-}
-
-// Helper function to create tools array
-function createTools(): DynamicStructuredTool[] {
+const createTools = (): DynamicStructuredTool[] => {
   return [createReadFileTool(), createReadFileCodeTool()];
-}
+};
 
-// Helper function to create the prompt template
-function createPromptTemplate(): ChatPromptTemplate {
+const createPromptTemplate = (): ChatPromptTemplate => {
   return ChatPromptTemplate.fromMessages([
     [
       "system",
@@ -103,22 +75,19 @@ Be thorough but focused. Use your reasoning capabilities to think through the ta
     ["human", "{input}"],
     ["placeholder", "{agent_scratchpad}"],
   ]);
-}
+};
 
-// Helper function to create the agent executor
-async function createAgentExecutor(): Promise<AgentExecutor> {
+const createAgentExecutor = (): AgentExecutor => {
   const llm = createLLMInstance();
   const tools = createTools();
   const prompt = createPromptTemplate();
 
-  // Create the tool-calling agent
-  const agent = await createToolCallingAgent({
+  const agent = createToolCallingAgent({
     llm,
     tools,
     prompt,
   });
 
-  // Create agent executor
   return new AgentExecutor({
     agent,
     tools,
@@ -127,30 +96,27 @@ async function createAgentExecutor(): Promise<AgentExecutor> {
     returnIntermediateSteps: true,
     handleParsingErrors: true,
   });
-}
+};
 
 // Main function to analyze task
-export async function analyzeCodebaseTask(taskQuery: string) {
+export const analyzeCodebaseTask = async (taskQuery: string) => {
   try {
     console.log("🤖 Initializing codebase agent...");
 
-    // Create agent executor
-    const agentExecutor = await createAgentExecutor();
+    const agentExecutor = createAgentExecutor();
 
     console.log("📝 Executing task analysis:", taskQuery);
 
-    // Execute the task analysis
     const result = await agentExecutor.invoke({
       input: taskQuery,
       chat_history: [],
     });
-    console.log("resuklt...............", result);
+
     console.log("✅ Analysis completed successfully");
     return result.output || "No response generated from the agent";
   } catch (error) {
     console.error("❌ Agent execution error:", error);
 
-    // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes("API key")) {
         throw new Error("OpenAI API key issue: " + error.message);
@@ -163,13 +129,14 @@ export async function analyzeCodebaseTask(taskQuery: string) {
 
     throw new Error("Unknown error occurred during analysis");
   }
-}
+};
 
-// Helper function to validate configuration
-export function validateConfiguration(): { valid: boolean; message: string } {
+export const validateConfiguration = (): {
+  valid: boolean;
+  message: string;
+} => {
   try {
-    // Ensure cached key exists
-    const apiKey = getOpenAIApiKey();
+    const apiKey = getApiKeyForLLM();
 
     if (!vscode.workspace.workspaceFolders) {
       return { valid: false, message: "No workspace folder is open" };
@@ -185,39 +152,4 @@ export function validateConfiguration(): { valid: boolean; message: string } {
           : "Configuration validation failed",
     };
   }
-}
-
-// Helper function for testing agent without full workflow
-export async function testAgentInitialization(): Promise<{
-  success: boolean;
-  message: string;
-}> {
-  try {
-    console.log("🧪 Testing agent initialization...");
-
-    // Validate configuration first
-    const configCheck = validateConfiguration();
-    if (!configCheck.valid) {
-      return { success: false, message: configCheck.message };
-    }
-
-    // Try to create agent components
-    const llm = createLLMInstance();
-    const tools = createTools();
-    const prompt = createPromptTemplate();
-
-    console.log("✅ All agent components created successfully");
-
-    return {
-      success: true,
-      message: `Agent initialization successful. LLM model: ${llm.model}, Tools: ${tools.length}`,
-    };
-  } catch (error) {
-    console.error("❌ Agent initialization failed:", error);
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown initialization error",
-    };
-  }
-}
+};

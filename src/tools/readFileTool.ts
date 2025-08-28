@@ -11,12 +11,12 @@ export interface FileInfo {
   size?: number;
 }
 
-// Global variables to cache gitignore patterns
+
 let gitignorePatterns: string[] | null = null;
 let useGitignore = false;
 
-// Helper function to parse .gitignore file
-async function parseGitignoreFile(workspaceRoot: string): Promise<string[]> {
+
+const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
   try {
     const gitignorePath = path.join(workspaceRoot, ".gitignore");
     const gitignoreUri = vscode.Uri.file(gitignorePath);
@@ -49,47 +49,45 @@ async function parseGitignoreFile(workspaceRoot: string): Promise<string[]> {
     console.log("⚠️ No .gitignore file found or error reading it:", error);
     return [];
   }
-}
+};
 
-// Helper function to check if a path matches gitignore patterns
-function matchesGitignorePattern(
+
+const matchesGitignorePattern = (
   filePath: string,
   fileName: string,
   patterns: string[]
-): boolean {
+): boolean => {
   const normalizedPath = filePath.replace(/\\/g, "/"); // Normalize path separators
 
   for (const pattern of patterns) {
     if (!pattern) continue;
 
-    // Handle negation patterns
+ 
     if (pattern.startsWith("!")) {
-      // If it's a negation pattern and matches, don't skip this file
       const negPattern = pattern.slice(1);
       if (matchSinglePattern(normalizedPath, fileName, negPattern)) {
-        return false; // Don't skip this file
+        return false; 
       }
       continue;
     }
 
     if (matchSinglePattern(normalizedPath, fileName, pattern)) {
-      return true; // Skip this file
+      return true; 
     }
   }
 
   return false;
-}
+};
 
-// Helper function to match a single pattern
-function matchSinglePattern(
+
+const matchSinglePattern = (
   filePath: string,
   fileName: string,
   pattern: string
-): boolean {
-  // Remove leading slash if present
+): boolean => {
   pattern = pattern.replace(/^\//, "");
 
-  // Handle directory patterns (ending with /)
+
   if (pattern.endsWith("/")) {
     const dirPattern = pattern.slice(0, -1);
     return (
@@ -99,7 +97,7 @@ function matchSinglePattern(
     );
   }
 
-  // Handle wildcard patterns
+
   if (pattern.includes("*")) {
     const regexPattern = pattern
       .replace(/\./g, "\\.")
@@ -110,19 +108,19 @@ function matchSinglePattern(
     return regex.test(filePath) || regex.test(fileName);
   }
 
-  // Handle exact matches and path segments
+ 
   return (
     filePath.includes(pattern) ||
     fileName === pattern ||
     filePath.endsWith("/" + pattern) ||
     filePath.startsWith(pattern + "/")
   );
-}
+};
 
-// Helper function to get skip patterns (either from .gitignore or predefined)
-async function getSkipPatterns(
+
+const getSkipPatterns = async (
   workspaceRoot: string
-): Promise<{ patterns: string[]; useGitignore: boolean }> {
+): Promise<{ patterns: string[]; useGitignore: boolean }> => {
   // Cache the patterns to avoid reading .gitignore multiple times
   if (gitignorePatterns !== null) {
     return { patterns: gitignorePatterns, useGitignore };
@@ -169,14 +167,14 @@ async function getSkipPatterns(
     gitignorePatterns = predefinedPatterns;
     return { patterns: predefinedPatterns, useGitignore: false };
   }
-}
+};
 
-// Updated function to check if a file/directory should be skipped
-async function shouldSkipFile(
+
+const shouldSkipFile = async (
   name: string,
   relativePath: string,
   workspaceRoot: string
-): Promise<boolean> {
+): Promise<boolean> => {
   const { patterns, useGitignore: usingGitignore } = await getSkipPatterns(
     workspaceRoot
   );
@@ -200,15 +198,15 @@ async function shouldSkipFile(
         !name.match(/^\.(env|gitignore|eslintrc|prettierrc|editorconfig)/))
     );
   }
-}
+};
 
 // Helper function to recursively scan directories
-async function scanDirectory(
+const scanDirectory = async (
   dirPath: string,
   rootPath: string,
   files: FileInfo[],
   maxFiles: number
-): Promise<void> {
+): Promise<void> => {
   if (files.length >= maxFiles) return;
 
   try {
@@ -249,12 +247,12 @@ async function scanDirectory(
   } catch (error) {
     console.error(`Error scanning directory ${dirPath}:`, error);
   }
-}
+};
 
 // Helper function to get workspace structure
-async function getWorkspaceStructure(
+const getWorkspaceStructure = async (
   maxFiles: number = 100
-): Promise<FileInfo[]> {
+): Promise<FileInfo[]> => {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     throw new Error("No workspace folder is open");
@@ -275,13 +273,13 @@ async function getWorkspaceStructure(
     }
     return a.name.localeCompare(b.name);
   });
-}
+};
 
 // Helper function to format structure for LLM
-function formatStructureForLLM(
+const formatStructureForLLM = (
   files: FileInfo[],
   usingGitignore: boolean
-): string {
+): string => {
   const directories = files.filter((f) => f.type === "directory");
   const codeFiles = files.filter((f) => f.type === "file");
 
@@ -309,10 +307,10 @@ function formatStructureForLLM(
   });
 
   return structure;
-}
+};
 
 // Main tool function
-export function createReadFileTool(): DynamicStructuredTool {
+export const createReadFileTool = (): DynamicStructuredTool => {
   return new DynamicStructuredTool({
     name: "read_file_structure",
     description: `
@@ -359,4 +357,4 @@ export function createReadFileTool(): DynamicStructuredTool {
       }
     },
   });
-}
+};

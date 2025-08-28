@@ -3,17 +3,16 @@ import { z } from "zod";
 import * as vscode from "vscode";
 import * as path from "path";
 
-// Helper function to get workspace root path
-function getWorkspaceRoot(): string {
+const getWorkspaceRoot = (): string => {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     throw new Error("No workspace folder is open");
   }
   return workspaceFolders[0].uri.fsPath;
-}
+};
 
 // Helper function to resolve file path
-function resolveFilePath(filePath: string): string {
+const resolveFilePath = (filePath: string): string => {
   const workspaceRoot = getWorkspaceRoot();
 
   // If path is already absolute and starts with workspace root, use as is
@@ -23,10 +22,10 @@ function resolveFilePath(filePath: string): string {
 
   // If relative path, resolve relative to workspace root
   return path.resolve(workspaceRoot, filePath);
-}
+};
 
-// Helper function to check if file exists
-async function fileExists(filePath: string): Promise<boolean> {
+
+const fileExists = async (filePath: string): Promise<boolean> => {
   try {
     const uri = vscode.Uri.file(filePath);
     const stat = await vscode.workspace.fs.stat(uri);
@@ -34,10 +33,10 @@ async function fileExists(filePath: string): Promise<boolean> {
   } catch {
     return false;
   }
-}
+};
 
-// Helper function to read file content
-async function readFileContent(filePath: string): Promise<string> {
+
+const readFileContent = async (filePath: string): Promise<string> => {
   try {
     const uri = vscode.Uri.file(filePath);
     const content = await vscode.workspace.fs.readFile(uri);
@@ -49,24 +48,24 @@ async function readFileContent(filePath: string): Promise<string> {
       }`
     );
   }
-}
+};
 
-// Helper function to get file size in a readable format
-function formatFileSize(bytes: number): string {
+
+const formatFileSize = (bytes: number): string => {
   const sizes = ["Bytes", "KB", "MB"];
   if (bytes === 0) return "0 Bytes";
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
   return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
-}
+};
 
-// Helper function to process single file
-async function processFile(filePath: string): Promise<{
+
+const processFile = async (filePath: string): Promise<{
   success: boolean;
   filePath: string;
   content?: string;
   size?: string;
   error?: string;
-}> {
+}> => {
   try {
     const resolvedPath = resolveFilePath(filePath);
 
@@ -96,14 +95,14 @@ async function processFile(filePath: string): Promise<{
       error: error instanceof Error ? error.message : "Unknown error",
     };
   }
-}
+};
 
-// Helper function to process multiple files
-async function processMultipleFiles(filePaths: string[]): Promise<{
+
+const processMultipleFiles = async (filePaths: string[]): Promise<{
   successfulReads: Array<{ filePath: string; content: string; size: string }>;
   failedReads: Array<{ filePath: string; error: string }>;
   totalFiles: number;
-}> {
+}> => {
   const results = await Promise.all(
     filePaths.map((filePath) => processFile(filePath))
   );
@@ -128,13 +127,13 @@ async function processMultipleFiles(filePaths: string[]): Promise<{
     failedReads,
     totalFiles: filePaths.length,
   };
-}
+};
 
-// Helper function to format file content for LLM
-function formatFileContentForLLM(
+
+const formatFileContentForLLM = (
   successfulReads: Array<{ filePath: string; content: string; size: string }>,
   failedReads: Array<{ filePath: string; error: string }>
-): string {
+): string => {
   let formatted = "# File Contents\n\n";
 
   if (successfulReads.length > 0) {
@@ -158,10 +157,10 @@ function formatFileContentForLLM(
   }
 
   return formatted;
-}
+};
 
 // Main tool function
-export function createReadFileCodeTool(): DynamicStructuredTool {
+export const createReadFileCodeTool = (): DynamicStructuredTool => {
   return new DynamicStructuredTool({
     name: "read_file_code",
     description: `
@@ -239,4 +238,4 @@ export function createReadFileCodeTool(): DynamicStructuredTool {
       }
     },
   });
-}
+};
