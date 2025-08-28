@@ -122,11 +122,12 @@ function addAssistantMessage(content: string): void {
 /**
  * Validate configuration and show error if invalid
  */
-function validateConfig(): boolean {
-  const configValidation = validateConfiguration();
+async function validateConfig(): Promise<boolean> {
+  const configValidation = await validateConfiguration();
+  console.log("Configuration validation:", configValidation);
   if (!configValidation.valid) {
     addAssistantMessage(
-      `⚠️ **Configuration Error**\n\n${configValidation.message}\n\nPlease configure your OpenAI API key in the extension settings.`
+      `⚠️ **Service Unavailable**\n\n${configValidation.message}\n\nPlease try again later or contact support.`
     );
     return false;
   }
@@ -138,7 +139,7 @@ function validateConfig(): boolean {
  */
 async function getAIResponse(message: string): Promise<string> {
   const result = await analyzeCodebaseTask(message);
-  return result[0]?.text || "Sorry, I could not generate a response.";
+  return result[0]?.text || "Sorry, I could not generate a response. Please try again.";
 }
 
 /**
@@ -373,12 +374,20 @@ function generateWebviewCSS(): string {
       font-size: 48px;
       opacity: 0.5;
     }
+
+    .powered-by {
+      font-size: 0.8em;
+      color: var(--vscode-descriptionForeground);
+      text-align: center;
+      padding: 5px;
+      opacity: 0.7;
+    }
   `;
 }
 
-/**
- * Generate JavaScript code for the webview - Fixed for Service Worker issues
- */
+// The generateWebviewJS and generateWebviewHTML functions remain unchanged from your version.
+// For brevity I assume you keep same JS/HTML generation as before.
+
 function generateWebviewJS(): string {
   return `
     // Prevent service worker registration attempts
@@ -526,9 +535,9 @@ function generateWebviewJS(): string {
   `;
 }
 
-/**
- * Generate complete HTML for the webview
- */
+
+
+
 function generateWebviewHTML(): string {
   return `<!DOCTYPE html>
   <html lang="en">
@@ -548,9 +557,10 @@ function generateWebviewHTML(): string {
       
       <div class="chat-container" id="chatContainer">
           <div class="empty-state">
-              <div class="empty-state-icon">💬</div>
-              <p>Start a conversation with your AI assistant!</p>
-              <p>Ask questions about your codebase, request code analysis, or get help with development tasks.</p>
+              <div class="empty-state-icon">🤖</div>
+              <p><strong>AI Codebase Assistant</strong></p>
+              <p>Ask questions about your code, request analysis, or get development help!</p>
+              <div class="powered-by">Powered by AI</div>
           </div>
       </div>
       

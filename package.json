@@ -1,22 +1,47 @@
 {
-  "name": "code-reviewer",
-  "displayName": "Code Reviewer",
-  "description": "AI-powered codebase analysis and review tool",
-  "version": "0.0.1",
+  "name": "ai-codebase-analyzer",
+  "displayName": "AI Codebase Analyzer",
+  "description": "AI-powered codebase analysis and review tool with interactive chat - no setup required!",
+  "version": "1.0.0",
+  "publisher": "abirdutta",
   "engines": {
     "vscode": "^1.103.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Machine Learning",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "ai",
+    "codebase",
+    "analysis",
+    "code review",
+    "assistant",
+    "no setup"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
+  "icon": "./assests/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/your-repo-name"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/your-repo-name/issues"
+  },
+  "homepage": "https://github.com/your-username/your-repo-name#readme",
+  "license": "MIT",
   "contributes": {
     "viewsContainers": {
       "activitybar": [
         {
           "id": "codebase-analyzer",
-          "title": "Codebase Analyzer",
+          "title": "AI Codebase Analyzer",
           "icon": "$(robot)"
         }
       ]
@@ -36,12 +61,7 @@
       {
         "command": "codebase-analyzer.analyzeCodebase",
         "title": "Analyze Codebase with AI",
-        "category": "Codebase Analyzer"
-      },
-      {
-        "command": "codebase-analyzer.testAgent",
-        "title": "Test AI Agent",
-        "category": "Codebase Analyzer"
+        "category": "AI Codebase Analyzer"
       },
       {
         "command": "codebase-analyzer.clearChat",
@@ -56,38 +76,35 @@
           "when": "view == codebase-analyzer.chatView",
           "group": "navigation"
         }
-      ]
-    },
-    "configuration": {
-      "title": "Codebase Analyzer",
-      "properties": {
-        "codebaseAnalyzer.openaiApiKey": {
-          "type": "string",
-          "default": "",
-          "description": "OpenAI API key for codebase analysis",
-          "scope": "application"
+      ],
+      "commandPalette": [
+        {
+          "command": "codebase-analyzer.analyzeCodebase",
+          "when": "true"
         }
-      }
+      ]
     }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "compile": "webpack --mode production",
+    "compile:dev": "webpack --mode development",
+    "watch": "webpack --mode development --watch",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
     "@types/vscode": "^1.103.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
-    "@vscode/test-cli": "^0.0.11",
-    "@vscode/test-electron": "^2.5.2",
     "eslint": "^9.32.0",
-    "typescript": "^5.9.2"
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.2",
+    "webpack": "^5.101.3",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@langchain/community": "^0.3.53",

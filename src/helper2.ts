@@ -23,7 +23,7 @@ export async function activate(context: vscode.ExtensionContext) {
           async () => {
             try {
               const apiKey =
-                "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";
+                "<Sample_key>";
   
               const resp = await fetch(
                 "https://api.openai.com/v1/chat/completions",

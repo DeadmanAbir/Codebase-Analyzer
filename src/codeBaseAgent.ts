@@ -6,17 +6,15 @@ import * as vscode from "vscode";
 import { createReadFileTool } from "./tools/readFileTool";
 import { z } from "zod";
 import { createReadFileCodeTool } from "./tools/readFileCodeTool";
+import { getCachedApiKeySync } from "./config"; // <-- use cached key
 
-// Helper function to get OpenAI API key from VS Code configuration
+// Helper function to get OpenAI API key from cached storage
 function getOpenAIApiKey(): string {
-  const config = vscode.workspace.getConfiguration("codebaseAnalyzer");
-  //   const apiKey = config.get<string>("openaiApiKey");
-  const apiKey =
-    "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";
+  const apiKey = getCachedApiKeySync();
 
-  if (!apiKey) {
+  if (!apiKey || apiKey.trim() === "") {
     throw new Error(
-      'OpenAI API key not configured. Please set it in VS Code settings under "codebaseAnalyzer.openaiApiKey"'
+      'OpenAI API key not configured. Please run the command "AI Codebase Analyzer: Set OpenAI API Key".'
     );
   }
 
@@ -170,7 +168,8 @@ export async function analyzeCodebaseTask(taskQuery: string) {
 // Helper function to validate configuration
 export function validateConfiguration(): { valid: boolean; message: string } {
   try {
-    getOpenAIApiKey();
+    // Ensure cached key exists
+    const apiKey = getOpenAIApiKey();
 
     if (!vscode.workspace.workspaceFolders) {
       return { valid: false, message: "No workspace folder is open" };
