@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { analyzeCodebaseTask, validateConfiguration } from "./codeBaseAgent";
+import { analyzeCodebaseTask, validateConfiguration } from "../agent/codeBaseAgent";
 
 interface ChatMessage {
   id: string;

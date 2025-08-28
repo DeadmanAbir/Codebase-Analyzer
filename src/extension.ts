@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { analyzeCodebaseTask, validateConfiguration } from "./codeBaseAgent";
-import { createChatbotViewProvider, clearChat, VIEW_TYPE } from "./ChatBotViewProvider";
+import { analyzeCodebaseTask, validateConfiguration } from "./agent/codeBaseAgent";
+import { createChatbotViewProvider, clearChat, VIEW_TYPE } from "./ui/ChatBotViewProvider";
 import { getOpenAIApiKey, validateApiKey, setCachedApiKey } from "./config";
 
 export async function activate(context: vscode.ExtensionContext) {

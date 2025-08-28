@@ -3,10 +3,10 @@ import { DynamicStructuredTool } from "@langchain/core/tools";
 import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import * as vscode from "vscode";
-import { createReadFileTool } from "./tools/readFileTool";
+import { createReadFileTool } from "../tools/readFileTool";
 import { z } from "zod";
-import { createReadFileCodeTool } from "./tools/readFileCodeTool";
-import { getCachedApiKeySync } from "./config"; // <-- use cached key
+import { createReadFileCodeTool } from "../tools/readFileCodeTool";
+import { getCachedApiKeySync } from "../config"; // <-- use cached key
 
 // Helper function to get OpenAI API key from cached storage
 function getOpenAIApiKey(): string {

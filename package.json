@@ -29,12 +29,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/your-repo-name"
+    "url": "https://github.com/DeadmanAbir/Codebase-Analyzer"
   },
   "bugs": {
-    "url": "https://github.com/your-username/your-repo-name/issues"
+    "url": "hhttps://github.com/DeadmanAbir/Codebase-Analyzer/issues"
   },
-  "homepage": "https://github.com/your-username/your-repo-name#readme",
+  "homepage": "https://github.com/DeadmanAbir/Codebase-Analyzer#readme",
   "license": "MIT",
   "contributes": {
     "viewsContainers": {
