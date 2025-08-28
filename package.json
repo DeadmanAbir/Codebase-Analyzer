@@ -1,7 +1,7 @@
 {
   "name": "code-reviewer",
-  "displayName": "code-reviewer",
-  "description": "",
+  "displayName": "Code Reviewer",
+  "description": "AI-powered codebase analysis and review tool",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.103.0"
@@ -9,21 +9,65 @@
   "categories": [
     "Other"
   ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codebase-analyzer",
+          "title": "Codebase Analyzer",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "views": {
+      "codebase-analyzer": [
+        {
+          "type": "webview",
+          "id": "codebase-analyzer.chatView",
+          "name": "AI Assistant",
+          "when": "true",
+          "icon": "$(robot)"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "codebase-analyzer.analyzeCodebase",
-        "title": "Codebase Analyzer"
+        "title": "Analyze Codebase with AI",
+        "category": "Codebase Analyzer"
+      },
+      {
+        "command": "codebase-analyzer.testAgent",
+        "title": "Test AI Agent",
+        "category": "Codebase Analyzer"
+      },
+      {
+        "command": "codebase-analyzer.clearChat",
+        "title": "Clear Chat",
+        "icon": "$(clear-all)"
       }
-    ]
-  },
-  "properties": {
-    "codebaseAnalyzer.openaiApiKey": {
-      "type": "string",
-      "default": "",
-      "description": "OpenAI API key for codebase analysis",
-      "scope": "application"
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codebase-analyzer.clearChat",
+          "when": "view == codebase-analyzer.chatView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Codebase Analyzer",
+      "properties": {
+        "codebaseAnalyzer.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API key for codebase analysis",
+          "scope": "application"
+        }
+      }
     }
   },
   "scripts": {
@@ -50,6 +94,7 @@
     "@langchain/core": "^0.3.72",
     "@langchain/langgraph": "^0.4.6",
     "@langchain/openai": "^0.6.9",
-    "axios": "^1.11.0"
+    "axios": "^1.11.0",
+    "zod": "^3.25.76"
   }
 }

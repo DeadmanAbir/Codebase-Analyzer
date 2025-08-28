@@ -4,11 +4,21 @@ import {
   testAgentInitialization,
   validateConfiguration,
 } from "./codeBaseAgent";
+import { createChatbotViewProvider, clearChat, VIEW_TYPE } from "./ChatBotViewProvider";
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log("🚀 Codebase Analyzer extension is now active");
 
-  // Register the main analysis command
+  // Create and register the chatbot view provider
+  const chatbotProvider = createChatbotViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      VIEW_TYPE,
+      chatbotProvider
+    )
+  );
+
+  // Register the main analysis command (kept for backward compatibility)
   const analyzeCommand = vscode.commands.registerCommand(
     "codebase-analyzer.analyzeCodebase",
     async () => {
@@ -33,13 +43,15 @@ export async function activate(context: vscode.ExtensionContext) {
           return;
         }
 
+        console.log("reached here");
+        
         // Get task query from user
         const taskQuery = await vscode.window.showInputBox({
           prompt: "Enter your task query",
           placeHolder: 'e.g., "Add a new API endpoint for user authentication"',
           ignoreFocusOut: true,
           validateInput: (value) => {
-            return value.trim().length < 10
+            return value?.trim().length < 10
               ? "Please enter a more detailed task description"
               : null;
           },
@@ -70,11 +82,13 @@ export async function activate(context: vscode.ExtensionContext) {
 
               progress.report({ increment: 25, message: "AI is analyzing..." });
               const result = await analyzeCodebaseTask(taskQuery);
-              console.log("resuklt...............", result);
+
               progress.report({
                 increment: 25,
                 message: "Generating recommendations...",
               });
+
+              console.log("result...............", result);
 
               // Show results in a new document
               const timestamp = new Date().toLocaleString();
@@ -82,7 +96,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 `# 🤖 AI Codebase Analysis Results\n\n` +
                 `**📝 Task Query:** ${taskQuery}\n\n` +
                 `**🕐 Analysis Time:** ${timestamp}\n\n` +
-                `**📊 Results:**\n\n${result[0].text as string}`;
+                `**📊 Results:**\n\n${result[0].text}`;
 
               const doc = await vscode.workspace.openTextDocument({
                 content,
@@ -129,10 +143,29 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(analyzeCommand);
+  // Register clear chat command
+  const clearChatCommand = vscode.commands.registerCommand(
+    "codebase-analyzer.clearChat",
+    () => {
+      clearChat();
+      vscode.window.showInformationMessage("Chat cleared successfully");
+    }
+  );
+
+  // Register all commands
+  context.subscriptions.push(
+    analyzeCommand,
+    testAgentCommand,
+    clearChatCommand
+  );
+
+  // Show welcome message
+  vscode.window.showInformationMessage(
+    "🤖 Codebase Analyzer is ready! Open the AI Assistant panel to start chatting."
+  );
 
   // Log successful activation
-  console.log("✅ Extension activated with agent functionality");
+  console.log("✅ Extension activated with chatbot functionality");
 }
 
 export function deactivate() {

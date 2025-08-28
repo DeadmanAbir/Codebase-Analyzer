@@ -4,7 +4,8 @@ import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import * as vscode from "vscode";
 import { createReadFileTool } from "./tools/readFileTool";
-import {z} from "zod"
+import { z } from "zod";
+import { createReadFileCodeTool } from "./tools/readFileCodeTool";
 
 // Helper function to get OpenAI API key from VS Code configuration
 function getOpenAIApiKey(): string {
@@ -25,7 +26,7 @@ function getOpenAIApiKey(): string {
 function createLLMInstance(): ChatOpenAI {
   const apiKey = getOpenAIApiKey();
 
-const model = new ChatOpenAI({
+  const model = new ChatOpenAI({
     apiKey,
     model: "gpt-5-mini-2025-08-07",
     // temperature: 0.1,
@@ -37,13 +38,17 @@ const model = new ChatOpenAI({
     },
   });
 
-const fileAccessSchema = z.object({
-  fileName: z.array(
-    z.string().describe("Name of the files that are needed to be accessed for further planning of task execution")
-  ),
-});
+  const fileAccessSchema = z.object({
+    fileName: z.array(
+      z
+        .string()
+        .describe(
+          "Name of the files that are needed to be accessed for further planning of task execution"
+        )
+    ),
+  });
 
-const structuredLlm = model.withStructuredOutput(fileAccessSchema);
+  const structuredLlm = model.withStructuredOutput(fileAccessSchema);
 
   return new ChatOpenAI({
     apiKey,
@@ -60,7 +65,7 @@ const structuredLlm = model.withStructuredOutput(fileAccessSchema);
 
 // Helper function to create tools array
 function createTools(): DynamicStructuredTool[] {
-  return [createReadFileTool()];
+  return [createReadFileTool(), createReadFileCodeTool()];
 }
 
 // Helper function to create the prompt template
@@ -68,21 +73,33 @@ function createPromptTemplate(): ChatPromptTemplate {
   return ChatPromptTemplate.fromMessages([
     [
       "system",
-      `You are a software development assistant that helps analyze codebases.
+      `You are a software development assistant that helps analyze codebases and plan task execution.
 
-Your primary task is to:
-1. First, use the read_file_structure tool to understand the codebase organization
-2. Based on the file structure and the user's task query, identify which specific files are most relevant for the task
-3. Provide a focused list of files that should be examined for task planning
+Your workflow should be:
+1. **First**, use the read_file_structure tool to understand the overall codebase organization
+2. **Then**, identify which specific files are most relevant for the user's task
+3. **Next**, use the read_file_code tool to examine the actual content of those relevant files
+4. **Finally**, provide a comprehensive action plan
 
-Guidelines:
-- Always call the read_file_structure tool first to understand the codebase
-- Focus on identifying the most relevant files for the given task
-- Be selective - don't just list all files, focus on the most important ones for the task
+You have access to these tools:
+- read_file_structure: Gets the complete file/directory structure of the workspace
+- read_file_code: Reads the actual content of specific files (up to 10 files per call)
 
-Response format should be:
-1. List of specific files to examine Just file names that's it.
-`,
+Guidelines for tool usage:
+- You can call tools multiple times as needed (up to 8 total calls)
+- Start with file structure, then read relevant code files
+- If you discover you need more files after reading initial ones, call read_file_code again
+- Be strategic about which files to read first (start with main/entry points)
+- You can re-examine file structure if you need to find additional files
+
+Response format should include:
+
+1. Specific action plan with file modifications needed
+2. You don;t have to write a code you just have to provide a step by step action plan which can be used in any task executor gent like cursor or github co pilot.
+3. Just proide the file name in heading and suggest the changes needed to be done.
+4. Recommended implementation order
+5. After everyhting provide a mermaid diagram of the changes needed to be done.
+Be thorough but focused. Use your reasoning capabilities to think through the task step by step.`,
     ],
     ["placeholder", "{chat_history}"],
     ["human", "{input}"],
@@ -107,9 +124,10 @@ async function createAgentExecutor(): Promise<AgentExecutor> {
   return new AgentExecutor({
     agent,
     tools,
-    maxIterations: 3,
+    maxIterations: 8,
     verbose: true,
     returnIntermediateSteps: true,
+    handleParsingErrors: true,
   });
 }
 
