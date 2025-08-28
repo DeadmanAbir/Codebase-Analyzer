@@ -8,13 +8,12 @@ import { z } from "zod";
 import { createReadFileCodeTool } from "../tools/readFileCodeTool";
 import { getSessionApiKey } from "../config"; // <-- get session key
 
-// Helper function to get OpenAI API key from session
 const getApiKeyForLLM = (): string => {
   const apiKey = getSessionApiKey();
 
   if (!apiKey || apiKey.trim() === "") {
     throw new Error(
-      'OpenAI API key not available in session. Please restart the extension or set the API key.'
+      "OpenAI API key not available in session. Please restart the extension or set the API key."
     );
   }
 
@@ -36,12 +35,10 @@ const createLLMInstance = (): ChatOpenAI => {
   return model;
 };
 
-// Helper function to create tools array
 const createTools = (): DynamicStructuredTool[] => {
   return [createReadFileTool(), createReadFileCodeTool()];
 };
 
-// Helper function to create the prompt template
 const createPromptTemplate = (): ChatPromptTemplate => {
   return ChatPromptTemplate.fromMessages([
     [
@@ -80,20 +77,17 @@ Be thorough but focused. Use your reasoning capabilities to think through the ta
   ]);
 };
 
-// Helper function to create the agent executor
 const createAgentExecutor = (): AgentExecutor => {
   const llm = createLLMInstance();
   const tools = createTools();
   const prompt = createPromptTemplate();
 
-  // Create the tool-calling agent
   const agent = createToolCallingAgent({
     llm,
     tools,
     prompt,
   });
 
-  // Create agent executor
   return new AgentExecutor({
     agent,
     tools,
@@ -109,23 +103,20 @@ export const analyzeCodebaseTask = async (taskQuery: string) => {
   try {
     console.log("🤖 Initializing codebase agent...");
 
-    // Create agent executor using session API key
     const agentExecutor = createAgentExecutor();
 
     console.log("📝 Executing task analysis:", taskQuery);
 
-    // Execute the task analysis
     const result = await agentExecutor.invoke({
       input: taskQuery,
       chat_history: [],
     });
-    console.log("resuklt...............", result);
+
     console.log("✅ Analysis completed successfully");
     return result.output || "No response generated from the agent";
   } catch (error) {
     console.error("❌ Agent execution error:", error);
 
-    // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes("API key")) {
         throw new Error("OpenAI API key issue: " + error.message);
@@ -140,13 +131,11 @@ export const analyzeCodebaseTask = async (taskQuery: string) => {
   }
 };
 
-// Helper function to validate configuration
 export const validateConfiguration = (): {
   valid: boolean;
   message: string;
 } => {
   try {
-    // Check session API key
     const apiKey = getApiKeyForLLM();
 
     if (!vscode.workspace.workspaceFolders) {
@@ -161,41 +150,6 @@ export const validateConfiguration = (): {
         error instanceof Error
           ? error.message
           : "Configuration validation failed",
-    };
-  }
-};
-
-// Helper function for testing agent without full workflow
-export const testAgentInitialization = (): {
-  success: boolean;
-  message: string;
-} => {
-  try {
-    console.log("🧪 Testing agent initialization...");
-
-    // Validate configuration first
-    const configCheck = validateConfiguration();
-    if (!configCheck.valid) {
-      return { success: false, message: configCheck.message };
-    }
-
-    // Try to create agent components
-    const llm = createLLMInstance();
-    const tools = createTools();
-    const prompt = createPromptTemplate();
-
-    console.log("✅ All agent components created successfully");
-
-    return {
-      success: true,
-      message: `Agent initialization successful. LLM model: ${llm.model}, Tools: ${tools.length}`,
-    };
-  } catch (error) {
-    console.error("❌ Agent initialization failed:", error);
-    return {
-      success: false,
-      message:
-        error instanceof Error ? error.message : "Unknown initialization error",
     };
   }
 };

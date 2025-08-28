@@ -24,7 +24,7 @@ const resolveFilePath = (filePath: string): string => {
   return path.resolve(workspaceRoot, filePath);
 };
 
-// Helper function to check if file exists
+
 const fileExists = async (filePath: string): Promise<boolean> => {
   try {
     const uri = vscode.Uri.file(filePath);
@@ -35,7 +35,7 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 };
 
-// Helper function to read file content
+
 const readFileContent = async (filePath: string): Promise<string> => {
   try {
     const uri = vscode.Uri.file(filePath);
@@ -50,7 +50,7 @@ const readFileContent = async (filePath: string): Promise<string> => {
   }
 };
 
-// Helper function to get file size in a readable format
+
 const formatFileSize = (bytes: number): string => {
   const sizes = ["Bytes", "KB", "MB"];
   if (bytes === 0) return "0 Bytes";
@@ -58,7 +58,7 @@ const formatFileSize = (bytes: number): string => {
   return Math.round((bytes / Math.pow(1024, i)) * 100) / 100 + " " + sizes[i];
 };
 
-// Helper function to process single file
+
 const processFile = async (filePath: string): Promise<{
   success: boolean;
   filePath: string;
@@ -97,7 +97,7 @@ const processFile = async (filePath: string): Promise<{
   }
 };
 
-// Helper function to process multiple files
+
 const processMultipleFiles = async (filePaths: string[]): Promise<{
   successfulReads: Array<{ filePath: string; content: string; size: string }>;
   failedReads: Array<{ filePath: string; error: string }>;
@@ -129,7 +129,7 @@ const processMultipleFiles = async (filePaths: string[]): Promise<{
   };
 };
 
-// Helper function to format file content for LLM
+
 const formatFileContentForLLM = (
   successfulReads: Array<{ filePath: string; content: string; size: string }>,
   failedReads: Array<{ filePath: string; error: string }>

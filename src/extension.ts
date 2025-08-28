@@ -6,7 +6,7 @@ import { promptForApiKey, setSessionApiKey, validateApiKey } from "./config";
 export async function activate(context: vscode.ExtensionContext) {
   console.log("🚀 AI Codebase Analyzer extension is activating...");
 
-  // Prompt for API key during activation
+
   try {
     const apiKey = await promptForApiKey();
     if (apiKey) {
@@ -28,7 +28,7 @@ export async function activate(context: vscode.ExtensionContext) {
     vscode.window.showErrorMessage('Failed to set up API key. Extension may not work properly.');
   }
 
-  // Register command to manually set API key
+  
   context.subscriptions.push(
     vscode.commands.registerCommand('codebase-analyzer.setApiKey', async () => {
       try {
@@ -45,19 +45,19 @@ export async function activate(context: vscode.ExtensionContext) {
     })
   );
 
-  // Create and register the chatbot view provider
+  
   const chatbotProvider = createChatbotViewProvider(context.extensionUri);
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(VIEW_TYPE, chatbotProvider)
   );
 
-  // Register the main analysis command
+
   const analyzeCommand = vscode.commands.registerCommand(
     "codebase-analyzer.analyzeCodebase",
     async () => {
       try {
         // Validate configuration first
-        const configValidation = await validateConfiguration();
+        const configValidation = validateConfiguration();
         if (!configValidation.valid) {
           const choice = await vscode.window.showErrorMessage(
             "OpenAI API key is not available. Would you like to set it now?",
@@ -68,7 +68,7 @@ export async function activate(context: vscode.ExtensionContext) {
           if (choice === 'Set API Key') {
             await vscode.commands.executeCommand('codebase-analyzer.setApiKey');
             // Try again after setting key
-            const newValidation = await validateConfiguration();
+            const newValidation = validateConfiguration();
             if (!newValidation.valid) {
               return;
             }
@@ -90,10 +90,9 @@ export async function activate(context: vscode.ExtensionContext) {
         });
 
         if (!taskQuery) {
-          return; // User cancelled
+          return; 
         }
 
-        // Show progress indicator
         await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
@@ -124,7 +123,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 message: "Preparing results...",
               });
 
-              // Show results in a new document
+      
               const timestamp = new Date().toLocaleString();
               const content =
                 `# 🤖 AI Codebase Analysis\n\n` +
@@ -156,7 +155,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register clear chat command
+ 
   const clearChatCommand = vscode.commands.registerCommand(
     "codebase-analyzer.clearChat",
     () => {
@@ -165,7 +164,7 @@ export async function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  // Register all commands
+ 
   context.subscriptions.push(analyzeCommand, clearChatCommand);
 
   console.log("✅ Extension activated successfully");

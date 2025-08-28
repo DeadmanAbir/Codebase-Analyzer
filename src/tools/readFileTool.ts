@@ -11,11 +11,11 @@ export interface FileInfo {
   size?: number;
 }
 
-// Global variables to cache gitignore patterns
+
 let gitignorePatterns: string[] | null = null;
 let useGitignore = false;
 
-// Helper function to parse .gitignore file
+
 const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
   try {
     const gitignorePath = path.join(workspaceRoot, ".gitignore");
@@ -51,7 +51,7 @@ const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
   }
 };
 
-// Helper function to check if a path matches gitignore patterns
+
 const matchesGitignorePattern = (
   filePath: string,
   fileName: string,
@@ -62,34 +62,32 @@ const matchesGitignorePattern = (
   for (const pattern of patterns) {
     if (!pattern) continue;
 
-    // Handle negation patterns
+ 
     if (pattern.startsWith("!")) {
-      // If it's a negation pattern and matches, don't skip this file
       const negPattern = pattern.slice(1);
       if (matchSinglePattern(normalizedPath, fileName, negPattern)) {
-        return false; // Don't skip this file
+        return false; 
       }
       continue;
     }
 
     if (matchSinglePattern(normalizedPath, fileName, pattern)) {
-      return true; // Skip this file
+      return true; 
     }
   }
 
   return false;
 };
 
-// Helper function to match a single pattern
+
 const matchSinglePattern = (
   filePath: string,
   fileName: string,
   pattern: string
 ): boolean => {
-  // Remove leading slash if present
   pattern = pattern.replace(/^\//, "");
 
-  // Handle directory patterns (ending with /)
+
   if (pattern.endsWith("/")) {
     const dirPattern = pattern.slice(0, -1);
     return (
@@ -99,7 +97,7 @@ const matchSinglePattern = (
     );
   }
 
-  // Handle wildcard patterns
+
   if (pattern.includes("*")) {
     const regexPattern = pattern
       .replace(/\./g, "\\.")
@@ -110,7 +108,7 @@ const matchSinglePattern = (
     return regex.test(filePath) || regex.test(fileName);
   }
 
-  // Handle exact matches and path segments
+ 
   return (
     filePath.includes(pattern) ||
     fileName === pattern ||
@@ -119,7 +117,7 @@ const matchSinglePattern = (
   );
 };
 
-// Helper function to get skip patterns (either from .gitignore or predefined)
+
 const getSkipPatterns = async (
   workspaceRoot: string
 ): Promise<{ patterns: string[]; useGitignore: boolean }> => {
@@ -171,7 +169,7 @@ const getSkipPatterns = async (
   }
 };
 
-// Updated function to check if a file/directory should be skipped
+
 const shouldSkipFile = async (
   name: string,
   relativePath: string,
