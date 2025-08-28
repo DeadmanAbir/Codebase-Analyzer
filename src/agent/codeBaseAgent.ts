@@ -9,7 +9,7 @@ import { createReadFileCodeTool } from "../tools/readFileCodeTool";
 import { getCachedApiKeySync } from "../config"; // <-- use cached key
 
 // Helper function to get OpenAI API key from cached storage
-function getOpenAIApiKey(): string {
+const getOpenAIApiKey = (): string => {
   const apiKey = getCachedApiKeySync();
 
   if (!apiKey || apiKey.trim() === "") {
@@ -19,17 +19,14 @@ function getOpenAIApiKey(): string {
   }
 
   return apiKey;
-}
+};
 
-function createLLMInstance(): ChatOpenAI {
+const createLLMInstance = (): ChatOpenAI => {
   const apiKey = getOpenAIApiKey();
 
   const model = new ChatOpenAI({
     apiKey,
     model: "gpt-5-mini-2025-08-07",
-    // temperature: 0.1,
-    // maxTokens: 2000,
-    // streaming: false,
     reasoning: {
       summary: "auto",
       effort: "high",
@@ -51,23 +48,20 @@ function createLLMInstance(): ChatOpenAI {
   return new ChatOpenAI({
     apiKey,
     model: "gpt-5-mini-2025-08-07",
-    // temperature: 0.1,
-    // maxTokens: 2000,
-    // streaming: false,
     reasoning: {
       summary: "auto",
       effort: "high",
     },
   });
-}
+};
 
 // Helper function to create tools array
-function createTools(): DynamicStructuredTool[] {
+const createTools = (): DynamicStructuredTool[] => {
   return [createReadFileTool(), createReadFileCodeTool()];
-}
+};
 
 // Helper function to create the prompt template
-function createPromptTemplate(): ChatPromptTemplate {
+const createPromptTemplate = (): ChatPromptTemplate => {
   return ChatPromptTemplate.fromMessages([
     [
       "system",
@@ -103,10 +97,10 @@ Be thorough but focused. Use your reasoning capabilities to think through the ta
     ["human", "{input}"],
     ["placeholder", "{agent_scratchpad}"],
   ]);
-}
+};
 
 // Helper function to create the agent executor
-async function createAgentExecutor(): Promise<AgentExecutor> {
+const createAgentExecutor = async (): Promise<AgentExecutor> => {
   const llm = createLLMInstance();
   const tools = createTools();
   const prompt = createPromptTemplate();
@@ -127,10 +121,10 @@ async function createAgentExecutor(): Promise<AgentExecutor> {
     returnIntermediateSteps: true,
     handleParsingErrors: true,
   });
-}
+};
 
 // Main function to analyze task
-export async function analyzeCodebaseTask(taskQuery: string) {
+export const analyzeCodebaseTask = async (taskQuery: string) => {
   try {
     console.log("🤖 Initializing codebase agent...");
 
@@ -163,10 +157,13 @@ export async function analyzeCodebaseTask(taskQuery: string) {
 
     throw new Error("Unknown error occurred during analysis");
   }
-}
+};
 
 // Helper function to validate configuration
-export function validateConfiguration(): { valid: boolean; message: string } {
+export const validateConfiguration = (): {
+  valid: boolean;
+  message: string;
+} => {
   try {
     // Ensure cached key exists
     const apiKey = getOpenAIApiKey();
@@ -185,13 +182,13 @@ export function validateConfiguration(): { valid: boolean; message: string } {
           : "Configuration validation failed",
     };
   }
-}
+};
 
 // Helper function for testing agent without full workflow
-export async function testAgentInitialization(): Promise<{
+export const testAgentInitialization = async (): Promise<{
   success: boolean;
   message: string;
-}> {
+}> => {
   try {
     console.log("🧪 Testing agent initialization...");
 
@@ -220,4 +217,4 @@ export async function testAgentInitialization(): Promise<{
         error instanceof Error ? error.message : "Unknown initialization error",
     };
   }
-}
+};

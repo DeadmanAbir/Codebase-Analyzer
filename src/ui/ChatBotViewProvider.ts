@@ -22,9 +22,9 @@ let chatbotState: ChatbotState = {
 /**
  * Main function to create and register the chatbot view provider
  */
-export function createChatbotViewProvider(
+export const createChatbotViewProvider = (
   extensionUri: vscode.Uri
-): vscode.WebviewViewProvider {
+): vscode.WebviewViewProvider => {
   chatbotState.extensionUri = extensionUri;
 
   return {
@@ -38,23 +38,23 @@ export function createChatbotViewProvider(
       setupMessageListener(webviewView);
     },
   };
-}
+};
 
 /**
  * Setup webview configuration and HTML
  */
-function setupWebview(webviewView: vscode.WebviewView): void {
+const setupWebview = (webviewView: vscode.WebviewView): void => {
   webviewView.webview.options = {
     enableScripts: true,
     localResourceRoots: [chatbotState.extensionUri],
   };
   webviewView.webview.html = generateWebviewHTML();
-}
+};
 
 /**
  * Setup message listener for webview communication
  */
-function setupMessageListener(webviewView: vscode.WebviewView): void {
+const setupMessageListener = (webviewView: vscode.WebviewView): void => {
   webviewView.webview.onDidReceiveMessage(async (data) => {
     switch (data.type) {
       case "sendMessage":
@@ -65,12 +65,12 @@ function setupMessageListener(webviewView: vscode.WebviewView): void {
         break;
     }
   }, undefined);
-}
+};
 
 /**
  * Handle incoming user messages
  */
-async function handleUserMessage(message: string): Promise<void> {
+const handleUserMessage = async (message: string): Promise<void> => {
   if (!message.trim()) return;
 
   // Add user message to chat
@@ -89,12 +89,12 @@ async function handleUserMessage(message: string): Promise<void> {
     hideTypingIndicator();
     handleError(error);
   }
-}
+};
 
 /**
  * Add user message to chat
  */
-function addUserMessage(message: string): void {
+const addUserMessage = (message: string): void => {
   const userMessage: ChatMessage = {
     id: Date.now().toString(),
     role: "user",
@@ -103,12 +103,12 @@ function addUserMessage(message: string): void {
   };
   chatbotState.messages.push(userMessage);
   updateWebview();
-}
+};
 
 /**
  * Add assistant message to chat
  */
-function addAssistantMessage(content: string): void {
+const addAssistantMessage = (content: string): void => {
   const aiMessage: ChatMessage = {
     id: (Date.now() + Math.random()).toString(),
     role: "assistant",
@@ -117,12 +117,12 @@ function addAssistantMessage(content: string): void {
   };
   chatbotState.messages.push(aiMessage);
   updateWebview();
-}
+};
 
 /**
  * Validate configuration and show error if invalid
  */
-async function validateConfig(): Promise<boolean> {
+const validateConfig = async (): Promise<boolean> => {
   const configValidation = await validateConfiguration();
   console.log("Configuration validation:", configValidation);
   if (!configValidation.valid) {
@@ -132,71 +132,71 @@ async function validateConfig(): Promise<boolean> {
     return false;
   }
   return true;
-}
+};
 
 /**
  * Get AI response from the codebase agent
  */
-async function getAIResponse(message: string): Promise<string> {
+const getAIResponse = async (message: string): Promise<string> => {
   const result = await analyzeCodebaseTask(message);
   return result[0]?.text || "Sorry, I could not generate a response. Please try again.";
-}
+};
 
 /**
  * Handle errors in message processing
  */
-function handleError(error: unknown): void {
+const handleError = (error: unknown): void => {
   const errorMessage = `❌ **Error**: ${
     error instanceof Error ? error.message : "An unknown error occurred"
   }`;
   addAssistantMessage(errorMessage);
-}
+};
 
 /**
  * Show typing indicator
  */
-function showTypingIndicator(): void {
+const showTypingIndicator = (): void => {
   chatbotState.view?.webview.postMessage({ type: "showTyping" });
-}
+};
 
 /**
  * Hide typing indicator
  */
-function hideTypingIndicator(): void {
+const hideTypingIndicator = (): void => {
   chatbotState.view?.webview.postMessage({ type: "hideTyping" });
-}
+};
 
 /**
  * Clear all chat messages
  */
-function clearChatMessages(): void {
+const clearChatMessages = (): void => {
   chatbotState.messages = [];
   updateWebview();
-}
+};
 
 /**
  * Update webview with current messages
  */
-function updateWebview(): void {
+const updateWebview = (): void => {
   if (chatbotState.view) {
     chatbotState.view.webview.postMessage({
       type: "updateMessages",
       messages: chatbotState.messages,
     });
   }
-}
+};
 
 /**
  * Public method to clear chat (called from extension)
  */
-export function clearChat(): void {
+export const clearChat = (): void => {
   clearChatMessages();
-}
+};
 
 /**
  * Generate CSS styles for the webview
  */
-function generateWebviewCSS(): string {
+const generateWebviewCSS = (): string => {
   return `
     body {
       font-family: var(--vscode-font-family);
@@ -383,12 +383,12 @@ function generateWebviewCSS(): string {
       opacity: 0.7;
     }
   `;
-}
+};
 
 // The generateWebviewJS and generateWebviewHTML functions remain unchanged from your version.
 // For brevity I assume you keep same JS/HTML generation as before.
 
-function generateWebviewJS(): string {
+const generateWebviewJS = (): string => {
   return `
     // Prevent service worker registration attempts
     if ('serviceWorker' in navigator) {
@@ -533,12 +533,9 @@ function generateWebviewJS(): string {
       }
     });
   `;
-}
+};
 
-
-
-
-function generateWebviewHTML(): string {
+const generateWebviewHTML = (): string => {
   return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -574,7 +571,7 @@ function generateWebviewHTML(): string {
       </script>
   </body>
   </html>`;
-}
+};
 
 // Export the view type constant for use in extension.ts
 export const VIEW_TYPE = "codebase-analyzer.chatView";
