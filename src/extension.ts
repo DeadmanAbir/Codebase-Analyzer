@@ -1,52 +1,49 @@
 import * as vscode from "vscode";
 import { analyzeCodebaseTask, validateConfiguration } from "./agent/codeBaseAgent";
 import { createChatbotViewProvider, clearChat, VIEW_TYPE } from "./ui/ChatBotViewProvider";
-import { getOpenAIApiKey, validateApiKey, setCachedApiKey } from "./config";
+import { promptForApiKey, setSessionApiKey, validateApiKey } from "./config";
 
 export async function activate(context: vscode.ExtensionContext) {
-  // Register command so user can set/update key anytime
+  console.log("🚀 AI Codebase Analyzer extension is activating...");
+
+  // Prompt for API key during activation
+  try {
+    const apiKey = await promptForApiKey();
+    if (apiKey) {
+      setSessionApiKey(apiKey);
+      console.log("✅ API key set for this session");
+      vscode.window.showInformationMessage('🤖 AI Codebase Analyzer is ready!');
+    } else {
+      vscode.window.showWarningMessage(
+        'No OpenAI API key provided. Extension features will be disabled until you provide a key.',
+        'Set API Key'
+      ).then(choice => {
+        if (choice === 'Set API Key') {
+          vscode.commands.executeCommand('codebase-analyzer.setApiKey');
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Error during API key setup:", error);
+    vscode.window.showErrorMessage('Failed to set up API key. Extension may not work properly.');
+  }
+
+  // Register command to manually set API key
   context.subscriptions.push(
     vscode.commands.registerCommand('codebase-analyzer.setApiKey', async () => {
-      const key = await getOpenAIApiKey(context); // will prompt + store if needed
-      if (key) {
-        setCachedApiKey(key);
-        vscode.window.showInformationMessage('OpenAI API key saved.');
-      } else {
-        vscode.window.showWarningMessage('No API key was provided.');
+      try {
+        const key = await promptForApiKey();
+        if (key) {
+          setSessionApiKey(key);
+          vscode.window.showInformationMessage('✅ OpenAI API key updated for this session.');
+        } else {
+          vscode.window.showWarningMessage('No API key was provided.');
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage('Failed to set API key.');
       }
     })
   );
-
-  // On activation, try to load key (env, secret storage, or prompt) and cache it
-  const key = await getOpenAIApiKey(context);
-  if (key) {
-    setCachedApiKey(key);
-    console.log("Using OpenAI key from SecretStorage or environment and cached it.");
-  } else {
-    // If not set (user canceled prompt or no env), politely offer to set it
-    const { valid } = await validateApiKey(context);
-    if (!valid) {
-      const choice = await vscode.window.showInformationMessage(
-        'OpenAI API key is not configured. Would you like to set it now?',
-        'Set API Key',
-        'Dismiss'
-      );
-
-      if (choice === 'Set API Key') {
-        const newKey = await getOpenAIApiKey(context); // prompts and stores
-        if (newKey) {
-          setCachedApiKey(newKey);
-          vscode.window.showInformationMessage('API key saved. You are good to go!');
-        } else {
-          vscode.window.showWarningMessage('No API key provided. Some features will be disabled.');
-        }
-      } else {
-        vscode.window.showInformationMessage('You can set the API key later from the Command Palette: "AI Codebase Analyzer: Set API Key"');
-      }
-    }
-  }
-
-  console.log("🚀 AI Codebase Analyzer extension is now active");
 
   // Create and register the chatbot view provider
   const chatbotProvider = createChatbotViewProvider(context.extensionUri);
@@ -59,13 +56,25 @@ export async function activate(context: vscode.ExtensionContext) {
     "codebase-analyzer.analyzeCodebase",
     async () => {
       try {
-        // Validate configuration first (uses cached key)
+        // Validate configuration first
         const configValidation = await validateConfiguration();
         if (!configValidation.valid) {
-          vscode.window.showErrorMessage(
-            "AI service is currently unavailable. Please try again later."
+          const choice = await vscode.window.showErrorMessage(
+            "OpenAI API key is not available. Would you like to set it now?",
+            'Set API Key',
+            'Cancel'
           );
-          return;
+          
+          if (choice === 'Set API Key') {
+            await vscode.commands.executeCommand('codebase-analyzer.setApiKey');
+            // Try again after setting key
+            const newValidation = await validateConfiguration();
+            if (!newValidation.valid) {
+              return;
+            }
+          } else {
+            return;
+          }
         }
 
         // Get task query from user
@@ -158,11 +167,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Register all commands
   context.subscriptions.push(analyzeCommand, clearChatCommand);
-
-  // Show welcome message
-  vscode.window.showInformationMessage(
-    "🤖 AI Codebase Analyzer is ready! Start chatting in the sidebar."
-  );
 
   console.log("✅ Extension activated successfully");
 }

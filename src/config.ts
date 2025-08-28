@@ -1,94 +1,56 @@
 import * as vscode from 'vscode';
 
 const DEFAULT_API_KEY = process.env.OPENAI_API_KEY?.trim() || '';
-const SECRET_KEY_NAME = 'aiCodebaseAnalyzer.openaiKey';
 
-let _cachedApiKey: string | undefined = DEFAULT_API_KEY || undefined;
+let sessionApiKey: string = '';
 
 /**
- * Set cached key (call this once after reading/prompting).
+ * Set the session API key (called once during activation)
  */
-export const setCachedApiKey = (key?: string): void => {
-  _cachedApiKey = key?.trim() || undefined;
+export const setSessionApiKey = (key: string): void => {
+  sessionApiKey = key.trim();
 };
 
 /**
- * Synchronous cache getter (useable anywhere in extension host).
- * Returns empty string if not set.
+ * Get the session API key (used by other files)
  */
-export const getCachedApiKeySync = (): string => {
-  return _cachedApiKey ?? '';
+export const getSessionApiKey = (): string => {
+  return sessionApiKey;
 };
 
 /**
- * Async getter (preferred). Order:
- * 1) environment var
- * 2) cached value
- * 3) SecretStorage (requires context)
- * 4) prompt user (stores into SecretStorage)
- *
- * If it obtains a final key it will also update the cached value.
+ * Prompt user for API key during activation
  */
-export const getOpenAIApiKey = async (context?: vscode.ExtensionContext): Promise<string> => {
-  // 1) env var
+export const promptForApiKey = async (): Promise<string> => {
+  // 1) Check environment variable first
   if (DEFAULT_API_KEY) {
-    setCachedApiKey(DEFAULT_API_KEY);
     return DEFAULT_API_KEY;
   }
 
-  // 2) cached value
-  if (_cachedApiKey && _cachedApiKey.trim() !== '') {
-    return _cachedApiKey;
-  }
-
-  // Without context we cannot read SecretStorage or prompt
-  if (!context) {
-    return '';
-  }
-
-  // 3) try SecretStorage
-  try {
-    const stored = await context.secrets.get(SECRET_KEY_NAME);
-    if (stored && stored.trim() !== '') {
-      setCachedApiKey(stored.trim());
-      return stored.trim();
-    }
-  } catch (err) {
-    console.error('Error reading secret from SecretStorage:', err);
-  }
-
-  // 4) prompt user
+  // 2) Prompt user for API key
   const input = await vscode.window.showInputBox({
-    prompt: 'Enter your OpenAI API key (will be stored securely)',
+    prompt: 'Enter your OpenAI API key for this session',
     placeHolder: 'sk-...',
     ignoreFocusOut: true,
     password: true
   });
 
   if (input && input.trim() !== '') {
-    const trimmed = input.trim();
-    try {
-      await context.secrets.store(SECRET_KEY_NAME, trimmed);
-    } catch (err) {
-      console.warn('Could not store API key in SecretStorage:', err);
-    }
-    setCachedApiKey(trimmed);
-    return trimmed;
+    return input.trim();
   }
 
   return '';
 };
 
 /**
- * Async validator that uses async getter and returns helpful message.
+ * Validate if session has API key
  */
-export const validateApiKey = async (context?: vscode.ExtensionContext): Promise<{ valid: boolean; message: string }> => {
-  const apiKey = await getOpenAIApiKey(context);
+export const validateApiKey = (): { valid: boolean; message: string } => {
+  const apiKey = getSessionApiKey();
   if (!apiKey || apiKey.trim() === '') {
     return {
       valid: false,
-      message:
-        'No OpenAI API key configured. Please run the command "AI Codebase Analyzer: Set OpenAI API Key".'
+      message: 'No OpenAI API key available for this session.'
     };
   }
   return { valid: true, message: 'API key is present' };

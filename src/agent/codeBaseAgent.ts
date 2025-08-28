@@ -6,15 +6,15 @@ import * as vscode from "vscode";
 import { createReadFileTool } from "../tools/readFileTool";
 import { z } from "zod";
 import { createReadFileCodeTool } from "../tools/readFileCodeTool";
-import { getCachedApiKeySync } from "../config"; // <-- use cached key
+import { getSessionApiKey } from "../config"; // <-- get session key
 
-// Helper function to get OpenAI API key from cached storage
-const getOpenAIApiKey = (): string => {
-  const apiKey = getCachedApiKeySync();
+// Helper function to get OpenAI API key from session
+const getApiKeyForLLM = (): string => {
+  const apiKey = getSessionApiKey();
 
   if (!apiKey || apiKey.trim() === "") {
     throw new Error(
-      'OpenAI API key not configured. Please run the command "AI Codebase Analyzer: Set OpenAI API Key".'
+      'OpenAI API key not available in session. Please restart the extension or set the API key.'
     );
   }
 
@@ -22,8 +22,8 @@ const getOpenAIApiKey = (): string => {
 };
 
 const createLLMInstance = (): ChatOpenAI => {
-  const apiKey = getOpenAIApiKey();
-
+  const apiKey = getApiKeyForLLM();
+  console.log("Using OpenAI API key from session");
   const model = new ChatOpenAI({
     apiKey,
     model: "gpt-5-mini-2025-08-07",
@@ -33,26 +33,7 @@ const createLLMInstance = (): ChatOpenAI => {
     },
   });
 
-  const fileAccessSchema = z.object({
-    fileName: z.array(
-      z
-        .string()
-        .describe(
-          "Name of the files that are needed to be accessed for further planning of task execution"
-        )
-    ),
-  });
-
-  const structuredLlm = model.withStructuredOutput(fileAccessSchema);
-
-  return new ChatOpenAI({
-    apiKey,
-    model: "gpt-5-mini-2025-08-07",
-    reasoning: {
-      summary: "auto",
-      effort: "high",
-    },
-  });
+  return model;
 };
 
 // Helper function to create tools array
@@ -100,13 +81,13 @@ Be thorough but focused. Use your reasoning capabilities to think through the ta
 };
 
 // Helper function to create the agent executor
-const createAgentExecutor = async (): Promise<AgentExecutor> => {
+const createAgentExecutor = (): AgentExecutor => {
   const llm = createLLMInstance();
   const tools = createTools();
   const prompt = createPromptTemplate();
 
   // Create the tool-calling agent
-  const agent = await createToolCallingAgent({
+  const agent = createToolCallingAgent({
     llm,
     tools,
     prompt,
@@ -128,8 +109,8 @@ export const analyzeCodebaseTask = async (taskQuery: string) => {
   try {
     console.log("🤖 Initializing codebase agent...");
 
-    // Create agent executor
-    const agentExecutor = await createAgentExecutor();
+    // Create agent executor using session API key
+    const agentExecutor = createAgentExecutor();
 
     console.log("📝 Executing task analysis:", taskQuery);
 
@@ -165,8 +146,8 @@ export const validateConfiguration = (): {
   message: string;
 } => {
   try {
-    // Ensure cached key exists
-    const apiKey = getOpenAIApiKey();
+    // Check session API key
+    const apiKey = getApiKeyForLLM();
 
     if (!vscode.workspace.workspaceFolders) {
       return { valid: false, message: "No workspace folder is open" };
@@ -185,10 +166,10 @@ export const validateConfiguration = (): {
 };
 
 // Helper function for testing agent without full workflow
-export const testAgentInitialization = async (): Promise<{
+export const testAgentInitialization = (): {
   success: boolean;
   message: string;
-}> => {
+} => {
   try {
     console.log("🧪 Testing agent initialization...");
 
