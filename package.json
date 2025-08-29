@@ -2,7 +2,7 @@
   "name": "ai-codebase-analyzer",
   "displayName": "AI Codebase Analyzer",
   "description": "AI-powered codebase analysis and review tool with interactive chat - no setup required!",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "publisher": "abirdutta",
   "engines": {
     "vscode": "^1.103.0"
