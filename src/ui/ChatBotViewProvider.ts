@@ -385,12 +385,10 @@ const generateWebviewCSS = (): string => {
   `;
 };
 
-// The generateWebviewJS and generateWebviewHTML functions remain unchanged from your version.
-// For brevity I assume you keep same JS/HTML generation as before.
 
 const generateWebviewJS = (): string => {
   return `
-    // Prevent service worker registration attempts
+   
     if ('serviceWorker' in navigator) {
       // Disable service worker in VS Code webview
       Object.defineProperty(navigator, 'serviceWorker', {
@@ -573,5 +571,5 @@ const generateWebviewHTML = (): string => {
   </html>`;
 };
 
-// Export the view type constant for use in extension.ts
+
 export const VIEW_TYPE = "codebase-analyzer.chatView";
