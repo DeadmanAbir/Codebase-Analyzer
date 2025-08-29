@@ -25,14 +25,33 @@ An AI-powered VS Code extension for intelligent codebase analysis and code revie
 ## File Structure
 
 ```
-code-reviewer/
-├── src/
-│   ├── components/
-│   ├── utils/
-│   ├── extension.js  # Entry file for the VS Code extension
-├── README.md
+├── .env
+├── .gitignore
+├── .vscodeignore
+├── CHANGELOG.md
+├── eslint.config.mjs
+├── LICENSE.md
+├── package-lock.json
 ├── package.json
-├── .vscode/
-│   ├── settings.json
-│   ├── launch.json
+├── prompt.js
+├── prompt.js.map
+├── README.md
+├── src/
+│   ├── agent/
+│   │   ├── codeBaseAgent.ts
+│   │   └── test/
+│   ├── tools/
+│   │   ├── readFileCodeTool.ts
+│   │   └── readFileTool.ts
+│   ├── ui/
+│   │   └── ChatBotViewProvider.ts
+│   ├── config.ts
+│   └── extension.ts
+├── tsconfig.json
+├── vsc-extension-quickstart.md
+├── vscode-test.mjs
+└── webpack.config.js
+
 ```
+
+The main entry point for this extension is `src/extension.ts`.
