@@ -11,10 +11,8 @@ export interface FileInfo {
   size?: number;
 }
 
-
 let gitignorePatterns: string[] | null = null;
 let useGitignore = false;
-
 
 const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
   try {
@@ -51,7 +49,6 @@ const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
   }
 };
 
-
 const matchesGitignorePattern = (
   filePath: string,
   fileName: string,
@@ -62,23 +59,21 @@ const matchesGitignorePattern = (
   for (const pattern of patterns) {
     if (!pattern) continue;
 
- 
     if (pattern.startsWith("!")) {
       const negPattern = pattern.slice(1);
       if (matchSinglePattern(normalizedPath, fileName, negPattern)) {
-        return false; 
+        return false;
       }
       continue;
     }
 
     if (matchSinglePattern(normalizedPath, fileName, pattern)) {
-      return true; 
+      return true;
     }
   }
 
   return false;
 };
-
 
 const matchSinglePattern = (
   filePath: string,
@@ -86,7 +81,6 @@ const matchSinglePattern = (
   pattern: string
 ): boolean => {
   pattern = pattern.replace(/^\//, "");
-
 
   if (pattern.endsWith("/")) {
     const dirPattern = pattern.slice(0, -1);
@@ -96,7 +90,6 @@ const matchSinglePattern = (
       fileName === dirPattern
     );
   }
-
 
   if (pattern.includes("*")) {
     const regexPattern = pattern
@@ -108,7 +101,6 @@ const matchSinglePattern = (
     return regex.test(filePath) || regex.test(fileName);
   }
 
- 
   return (
     filePath.includes(pattern) ||
     fileName === pattern ||
@@ -116,7 +108,6 @@ const matchSinglePattern = (
     filePath.startsWith(pattern + "/")
   );
 };
-
 
 const getSkipPatterns = async (
   workspaceRoot: string
@@ -128,6 +119,7 @@ const getSkipPatterns = async (
 
   // Try to read .gitignore first
   const parsedGitignorePatterns = await parseGitignoreFile(workspaceRoot);
+  parsedGitignorePatterns.push(".git");
 
   if (parsedGitignorePatterns.length > 0) {
     console.log("✅ Using .gitignore patterns for filtering");
@@ -168,7 +160,6 @@ const getSkipPatterns = async (
     return { patterns: predefinedPatterns, useGitignore: false };
   }
 };
-
 
 const shouldSkipFile = async (
   name: string,

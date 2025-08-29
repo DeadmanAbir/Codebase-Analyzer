@@ -61,6 +61,7 @@ Guidelines for tool usage:
 - If you discover you need more files after reading initial ones, call read_file_code again
 - Be strategic about which files to read first (start with main/entry points)
 - You can re-examine file structure if you need to find additional files
+- Don’t provide generic answer texts like “Hey, I will work upon these” or “Here is my explanation.” Just directly provide the planning, no irrelevant text.
 
 Response format should include:
 
