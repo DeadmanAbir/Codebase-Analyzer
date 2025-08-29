@@ -21,3 +21,18 @@ An AI-powered VS Code extension for intelligent codebase analysis and code revie
 ## Requirements
 - OpenAI API key (required)
 - VS Code 1.103.0 or higher
+
+## File Structure
+
+```
+code-reviewer/
+├── src/
+│   ├── components/
+│   ├── utils/
+│   ├── extension.js  # Entry file for the VS Code extension
+├── README.md
+├── package.json
+├── .vscode/
+│   ├── settings.json
+│   ├── launch.json
+```
