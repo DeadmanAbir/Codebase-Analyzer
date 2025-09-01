@@ -4,9 +4,8 @@ import { AgentExecutor, createToolCallingAgent } from "langchain/agents";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import * as vscode from "vscode";
 import { createReadFileTool } from "../tools/readFileTool";
-import { z } from "zod";
 import { createReadFileCodeTool } from "../tools/readFileCodeTool";
-import { getSessionApiKey } from "../config"; // <-- get session key
+import { getSessionApiKey } from "../config"; 
 
 const getApiKeyForLLM = (): string => {
   const apiKey = getSessionApiKey();
@@ -137,7 +136,6 @@ export const validateConfiguration = (): {
   message: string;
 } => {
   try {
-    const apiKey = getApiKeyForLLM();
 
     if (!vscode.workspace.workspaceFolders) {
       return { valid: false, message: "No workspace folder is open" };
