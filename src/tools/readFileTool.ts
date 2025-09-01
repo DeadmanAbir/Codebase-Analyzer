@@ -11,193 +11,62 @@ export interface FileInfo {
   size?: number;
 }
 
+let skipPatterns: string[] | null = null;
 
-let gitignorePatterns: string[] | null = null;
-let useGitignore = false;
+const getSkipPatterns = (): string[] => {
+  if (skipPatterns) return skipPatterns;
 
+  const predefinedPatterns = [
+    "node_modules",
+    ".git",
+    ".vscode",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    ".nuxt",
+    "target",
+    "bin",
+    "obj",
+    ".DS_Store",
+    "Thumbs.db",
+    ".env",
+    "public",
+    "*.log",
+    "*.tmp",
+    "*.temp",
+    ".cache",
+    ".parcel-cache",
+    "vendor",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+  ];
 
-const parseGitignoreFile = async (workspaceRoot: string): Promise<string[]> => {
-  try {
-    const gitignorePath = path.join(workspaceRoot, ".gitignore");
-    const gitignoreUri = vscode.Uri.file(gitignorePath);
-
-    const content = await vscode.workspace.fs.readFile(gitignoreUri);
-    const gitignoreContent = Buffer.from(content).toString("utf8");
-
-    const patterns = gitignoreContent
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line && !line.startsWith("#")) // Remove empty lines and comments
-      .map((pattern) => {
-        // Handle negation patterns (patterns starting with !)
-        if (pattern.startsWith("!")) {
-          return pattern; // Keep negation patterns as is for now
-        }
-
-        // Convert gitignore patterns to more standard glob patterns
-        if (pattern.endsWith("/")) {
-          // Directory patterns
-          return pattern;
-        }
-
-        return pattern;
-      });
-
-    console.log("📝 Parsed .gitignore patterns:", patterns);
-    return patterns;
-  } catch (error) {
-    console.log("⚠️ No .gitignore file found or error reading it:", error);
-    return [];
-  }
+  skipPatterns = predefinedPatterns;
+  return predefinedPatterns;
 };
 
-
-const matchesGitignorePattern = (
-  filePath: string,
-  fileName: string,
-  patterns: string[]
-): boolean => {
-  const normalizedPath = filePath.replace(/\\/g, "/"); // Normalize path separators
-
-  for (const pattern of patterns) {
-    if (!pattern) continue;
-
- 
-    if (pattern.startsWith("!")) {
-      const negPattern = pattern.slice(1);
-      if (matchSinglePattern(normalizedPath, fileName, negPattern)) {
-        return false; 
-      }
-      continue;
-    }
-
-    if (matchSinglePattern(normalizedPath, fileName, pattern)) {
-      return true; 
-    }
-  }
-
-  return false;
-};
-
-
-const matchSinglePattern = (
-  filePath: string,
-  fileName: string,
-  pattern: string
-): boolean => {
-  pattern = pattern.replace(/^\//, "");
-
-
-  if (pattern.endsWith("/")) {
-    const dirPattern = pattern.slice(0, -1);
-    return (
-      filePath.includes(dirPattern + "/") ||
-      filePath === dirPattern ||
-      fileName === dirPattern
-    );
-  }
-
-
-  if (pattern.includes("*")) {
-    const regexPattern = pattern
-      .replace(/\./g, "\\.")
-      .replace(/\*/g, ".*")
-      .replace(/\?/g, ".");
-
-    const regex = new RegExp(`(^|/)${regexPattern}($|/)`);
-    return regex.test(filePath) || regex.test(fileName);
-  }
-
- 
-  return (
-    filePath.includes(pattern) ||
-    fileName === pattern ||
-    filePath.endsWith("/" + pattern) ||
-    filePath.startsWith(pattern + "/")
-  );
-};
-
-
-const getSkipPatterns = async (
-  workspaceRoot: string
-): Promise<{ patterns: string[]; useGitignore: boolean }> => {
-  // Cache the patterns to avoid reading .gitignore multiple times
-  if (gitignorePatterns !== null) {
-    return { patterns: gitignorePatterns, useGitignore };
-  }
-
-  // Try to read .gitignore first
-  const parsedGitignorePatterns = await parseGitignoreFile(workspaceRoot);
-
-  if (parsedGitignorePatterns.length > 0) {
-    console.log("✅ Using .gitignore patterns for filtering");
-    useGitignore = true;
-    gitignorePatterns = parsedGitignorePatterns;
-    return { patterns: parsedGitignorePatterns, useGitignore: true };
-  } else {
-    console.log("📋 Using predefined patterns for filtering");
-    useGitignore = false;
-    const predefinedPatterns = [
-      "node_modules",
-      ".git",
-      ".vscode",
-      "dist",
-      "build",
-      "coverage",
-      ".next",
-      ".nuxt",
-      "target",
-      "bin",
-      "obj",
-      ".DS_Store",
-      "Thumbs.db",
-      ".env",
-      "public",
-      "*.log",
-      "*.tmp",
-      "*.temp",
-      ".cache",
-      ".parcel-cache",
-      "vendor",
-      "__pycache__",
-      ".pytest_cache",
-      ".mypy_cache",
-    ];
-
-    gitignorePatterns = predefinedPatterns;
-    return { patterns: predefinedPatterns, useGitignore: false };
-  }
-};
-
-
-const shouldSkipFile = async (
+const shouldSkipFile = (
   name: string,
-  relativePath: string,
-  workspaceRoot: string
-): Promise<boolean> => {
-  const { patterns, useGitignore: usingGitignore } = await getSkipPatterns(
-    workspaceRoot
-  );
+  relativePath: string
+): boolean => {
+  const patterns = getSkipPatterns();
 
-  if (usingGitignore) {
-    return matchesGitignorePattern(relativePath, name, patterns);
-  } else {
-    // Use the old logic for predefined patterns
-    return (
-      patterns.some((pattern) => {
-        if (pattern.includes("*")) {
-          const regexPattern = pattern
-            .replace(/\./g, "\\.")
-            .replace(/\*/g, ".*");
-          const regex = new RegExp(regexPattern);
-          return regex.test(name) || regex.test(relativePath);
-        }
-        return name.includes(pattern) || relativePath.includes(pattern);
-      }) ||
-      (name.startsWith(".") &&
-        !name.match(/^\.(env|gitignore|eslintrc|prettierrc|editorconfig)/))
-    );
-  }
+  return (
+    patterns.some((pattern) => {
+      if (pattern.includes("*")) {
+        const regexPattern = pattern
+          .replace(/\./g, "\\.")
+          .replace(/\*/g, ".*");
+        const regex = new RegExp(regexPattern);
+        return regex.test(name) || regex.test(relativePath);
+      }
+      return name.includes(pattern) || relativePath.includes(pattern);
+    }) ||
+    (name.startsWith(".") &&
+      !name.match(/^\.(env|gitignore|eslintrc|prettierrc|editorconfig)/))
+  );
 };
 
 // Helper function to recursively scan directories
@@ -220,8 +89,8 @@ const scanDirectory = async (
       const fullPath = path.join(dirPath, name);
       const relativePath = path.relative(rootPath, fullPath);
 
-      // Check if file should be skipped using either .gitignore or predefined patterns
-      if (await shouldSkipFile(name, relativePath, rootPath)) {
+      // Skip unwanted files/folders
+      if (shouldSkipFile(name, relativePath)) {
         continue;
       }
 
@@ -261,9 +130,6 @@ const getWorkspaceStructure = async (
   const rootPath = workspaceFolders[0].uri.fsPath;
   const files: FileInfo[] = [];
 
-  // Reset cached patterns when getting new workspace structure
-  gitignorePatterns = null;
-
   await scanDirectory(rootPath, rootPath, files, maxFiles);
 
   // Sort files by type and name
@@ -276,21 +142,12 @@ const getWorkspaceStructure = async (
 };
 
 // Helper function to format structure for LLM
-const formatStructureForLLM = (
-  files: FileInfo[],
-  usingGitignore: boolean
-): string => {
+const formatStructureForLLM = (files: FileInfo[]): string => {
   const directories = files.filter((f) => f.type === "directory");
   const codeFiles = files.filter((f) => f.type === "file");
 
   let structure = "# Workspace File Structure\n\n";
-
-  if (usingGitignore) {
-    structure += "ℹ️ *Using .gitignore patterns for file filtering*\n\n";
-  } else {
-    structure +=
-      "ℹ️ *Using predefined patterns for file filtering (no .gitignore found)*\n\n";
-  }
+  structure += "ℹ️ *Using predefined patterns for file filtering*\n\n";
 
   if (directories.length > 0) {
     structure += "## Directories:\n";
@@ -315,9 +172,8 @@ export const createReadFileTool = (): DynamicStructuredTool => {
     name: "read_file_structure",
     description: `
       Reads the current VS Code workspace file structure and returns a formatted list 
-      of all files and directories. Automatically uses .gitignore patterns if available,
-      otherwise falls back to predefined skip patterns. This helps understand the 
-      codebase organization before planning task execution.
+      of all files and directories. Skips files and directories based on predefined 
+      patterns (e.g., node_modules, build artifacts, cache).
     `,
     schema: z.object({
       includeHidden: z
@@ -332,20 +188,14 @@ export const createReadFileTool = (): DynamicStructuredTool => {
     func: async ({ includeHidden = false, maxFiles = 100 }) => {
       try {
         const files = await getWorkspaceStructure(maxFiles);
-        const formattedStructure = formatStructureForLLM(files, useGitignore);
+        const formattedStructure = formatStructureForLLM(files);
 
         return {
           success: true,
           fileCount: files.length,
           structure: formattedStructure,
-          usingGitignore: useGitignore,
-          message: `Successfully scanned ${
-            files.length
-          } files and directories ${
-            useGitignore
-              ? "using .gitignore patterns"
-              : "using predefined patterns"
-          }`,
+          usingGitignore: false,
+          message: `Successfully scanned ${files.length} files and directories using predefined patterns`,
         };
       } catch (error) {
         return {
